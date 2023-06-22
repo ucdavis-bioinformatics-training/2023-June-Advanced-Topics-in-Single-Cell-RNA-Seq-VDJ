@@ -2,13 +2,12 @@
 
 __The mission of the Bioinformatics Core facility is to facilitate outstanding omics-scale research through these activities:__
 
- <img src="https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2021-December-Metagenomics-and-Metatranscriptomics/master/base/welcome_figure1.png" alt="welcome_figure1" width="800px"/>
+ ![](welcome_figure1.png)
 
 ## Staff and Students
 Our team offers custom bioinformatics services to academic and private organizations. We have a strong academic background with a focus on cutting edge, open source software. We replicate standard analysis pipelines (best practices) when appropriate, and/or develop novel applications and pipelines when needed, however we always emphasize biological interpretation of the data.
 
-
- <img src="https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2023-June-Single-Cell-RNA-Seq-Analysis/master/base/staff.png" alt="welcome_figure1" width="800px"/>
+![](staff.png)
 
 ## Contacts
 
@@ -46,10 +45,6 @@ Because video is involved, we ask everyone to be respectful and we reserve the r
 Text based communication will be conducted via a Slack channel. Staff will be monitoring the Slack channel to answer questions (and schedule a Zoom break out room if needed). If you know the answer to someone else's question, feel free to answer it.
 
 [Learn more about how we use Slack in our workshops.](./slack)
-
-#### Patience
-
-We ask for a little more patience as this process is also new to us, but we are committed to providing you the best educational experience we can (under the current conditions).
 
 ### Workshop Goals
 
