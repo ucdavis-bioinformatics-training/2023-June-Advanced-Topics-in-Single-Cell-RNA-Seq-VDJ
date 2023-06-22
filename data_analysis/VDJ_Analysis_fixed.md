@@ -54,7 +54,7 @@ library(scRepertoire)
  Download Cell Ranger results
 ```{r, eval=FALSE}
 options(timeout=1200)
-download.file("https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2022-March-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/main/data_analysis/cellranger_vdj_results.zip", "cellranger_vdj_results.zip")
+download.file("https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2023-June-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/main/data_analysis/cellranger_vdj_results.zip", "cellranger_vdj_results.zip")
 system("unzip cellranger_vdj_results.zip")
 </div>
 ## Set-up
@@ -208,7 +208,7 @@ data_to_circlize$B_chain = sapply(aa_seqs, "[[", 2L)
 
 data_to_circlize$IGH = sapply(strsplit(data_to_circlize$CTstrict, split="_"), function(x) paste(unique(x[c(1)]),collapse="_"))
 data_to_circlize$IGL = sapply(strsplit(data_to_circlize$CTstrict, split="_"), function(x) paste(unique(x[c(3)]),collapse="_"))
-                              
+
 # get optimal sequence order from trivial plot
 chordDiagram(data.frame(data_to_circlize$IGH[1:15], data_to_circlize$IGL[1:15], times = 1), annotationTrack = "grid" )
 seq.order <- get.all.sector.index()

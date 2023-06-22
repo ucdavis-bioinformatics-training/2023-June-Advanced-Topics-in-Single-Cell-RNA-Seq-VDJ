@@ -598,7 +598,7 @@ The first line tells sbatch what scripting language (bash here) the rest of the 
 
 
     cd /share/workshop/intro_scrnaseq/$USER
-    wget https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2022-March-Single-Cell-RNA-Seq-Analysis/main/software_scripts/scripts/template.slurm template.slurm
+    wget https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2023-June-Single-Cell-RNA-Seq-Analysis/main/software_scripts/scripts/template.slurm template.slurm
     cat template.slurm
     sbatch template.slurm
 

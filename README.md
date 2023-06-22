@@ -1,6 +1,6 @@
 All documentation for the workshop is best viewed from the github.io pages
 
-[Documentation](https://ucdavis-bioinformatics-training.github.io/2022-March-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/)
+[Documentation](https://ucdavis-bioinformatics-training.github.io/2023-June-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/)
 
 Advanced Topics in Single Cell RNA-Seq Analysis: VDJ
 

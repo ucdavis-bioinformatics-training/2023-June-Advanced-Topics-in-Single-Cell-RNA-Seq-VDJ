@@ -57,7 +57,7 @@ library(scRepertoire)
 
 ```r
 options(timeout=1200)
-download.file("https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2022-March-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/main/data_analysis/cellranger_vdj_results.zip", "cellranger_vdj_results.zip")
+download.file("https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2023-June-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/main/data_analysis/cellranger_vdj_results.zip", "cellranger_vdj_results.zip")
 system("unzip cellranger_vdj_results.zip")
 ```
 
@@ -653,7 +653,7 @@ data_to_circlize$B_chain = sapply(aa_seqs, "[[", 2L)
 
 data_to_circlize$IGH = sapply(strsplit(data_to_circlize$CTstrict, split="_"), function(x) paste(unique(x[c(1)]),collapse="_"))
 data_to_circlize$IGL = sapply(strsplit(data_to_circlize$CTstrict, split="_"), function(x) paste(unique(x[c(3)]),collapse="_"))
-                              
+
 # get optimal sequence order from trivial plot
 chordDiagram(data.frame(data_to_circlize$IGH[1:15], data_to_circlize$IGL[1:15], times = 1), annotationTrack = "grid" )
 seq.order <- get.all.sector.index()
@@ -670,22 +670,22 @@ sessionInfo()
 ## R version 4.1.2 (2021-11-01)
 ## Platform: aarch64-apple-darwin20 (64-bit)
 ## Running under: macOS Monterey 12.0.1
-## 
+##
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.1-arm64/Resources/lib/libRblas.0.dylib
 ## LAPACK: /Library/Frameworks/R.framework/Versions/4.1-arm64/Resources/lib/libRlapack.dylib
-## 
+##
 ## locale:
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
-## 
+##
 ## attached base packages:
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
-## 
+##
 ## other attached packages:
 ## [1] SeuratObject_4.0.4 Seurat_4.1.0       scRepertoire_1.4.0 dplyr_1.0.8       
 ## [5] kableExtra_1.3.4   knitr_1.37         magrittr_2.0.2     tidyr_1.2.0       
 ## [9] ggplot2_3.3.5     
-## 
+##
 ## loaded via a namespace (and not attached):
 ##   [1] VGAM_1.1-6                  systemfonts_1.0.4          
 ##   [3] plyr_1.8.6                  igraph_1.2.11              
@@ -762,4 +762,3 @@ sessionInfo()
 ## [145] MatrixGenerics_1.6.0        Rtsne_0.15                 
 ## [147] Biobase_2.54.0              shiny_1.7.1
 ```
-

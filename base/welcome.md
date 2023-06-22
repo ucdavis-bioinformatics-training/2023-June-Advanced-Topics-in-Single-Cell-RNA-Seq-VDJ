@@ -8,7 +8,7 @@ __The mission of the Bioinformatics Core facility is to facilitate outstanding o
 Our team offers custom bioinformatics services to academic and private organizations. We have a strong academic background with a focus on cutting edge, open source software. We replicate standard analysis pipelines (best practices) when appropriate, and/or develop novel applications and pipelines when needed, however we always emphasize biological interpretation of the data.
 
 
- <img src="https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2022-March-Single-Cell-RNA-Seq-Analysis/master/base/staff.png" alt="welcome_figure1" width="800px"/>
+ <img src="https://raw.githubusercontent.com/ucdavis-bioinformatics-training/2023-June-Single-Cell-RNA-Seq-Analysis/master/base/staff.png" alt="welcome_figure1" width="800px"/>
 
 ## Contacts
 
@@ -72,7 +72,7 @@ Workshop materials are all posted on github, and publicly available
 
 * This Advanced Topic in Single Cell RNASeq - VDJ workshop
 
-   [https://ucdavis-bioinformatics-training.github.io/2022-March-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/](https://ucdavis-bioinformatics-training.github.io/2022-March-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/)
+   [https://ucdavis-bioinformatics-training.github.io/2023-June-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/](https://ucdavis-bioinformatics-training.github.io/2023-June-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/)
 
 ### Computing Cluster
 
@@ -84,4 +84,3 @@ To get an account.
 Request an account -> sponsor is "Bioinformatics Core Workshop"
 
 If you already have, or have had in the past, an account on our systems, then please tell us your username, or email, and we will add you to the workshop. **Do not create a new account.**
-
