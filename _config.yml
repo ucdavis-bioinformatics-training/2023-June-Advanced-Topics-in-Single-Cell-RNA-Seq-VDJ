@@ -1,0 +1,45 @@
+theme: jekyll-theme-minimal
+title: 'Advanced Topics in Single Cell RNA-Seq: VDJ'
+show_downloads: True
+google_analytics: True
+navigation:
+  - title: Home
+    url: /
+
+  - heading: Introduction and Lectures
+  - title: Intro to the Workshop and Core
+    url: base/welcome
+  - title: Schedule
+    url: base/schedule
+
+  - heading: Support
+  - title: Using Slack in this workshop
+    url: base/slack
+  - title: Using Zoom in this workshop
+    url: base/zoom
+  - title: Cheat Sheets
+    url: base/cheatSheetIndex
+  - title: Software and Links
+    url: software_scripts/software
+  - title: Scripts
+    url: software_scripts/scripts_links
+
+  - heading: Prerequisites
+  - title: CLI
+    url: base/cli_prerequisites
+  - title: R
+    url: base/r_prerequisites
+
+  - heading: VDJ
+  - title: Data Reduction
+    url: data_reduction/VDJ
+  - title: Data Analysis
+    url: data_analysis/VDJ_Analysis
+
+  - heading: ETC
+  - title: Closing thoughts
+    url: base/closing
+  - title: Github page
+    url: https://github.com/ucdavis-bioinformatics-training/2021-March-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ
+  - title: Biocore website
+    url: http://bioinformatics.ucdavis.edu
