@@ -4,7 +4,7 @@ All documentation for the workshop is best viewed from the github.io pages
 
 Advanced Topics in Single Cell RNA-Seq Analysis: VDJ
 
-Mar. 24, 2022, 9 a.m. - 5:00 p.m
+Jun. 23, 2023, 9 a.m. - 5:00 p.m
 
 Contact - UC Davis Bioinformatics Core, [training.bioinformatics@ucdavis.edu](mailto:training.bioinformatics@ucdavis.edu)
 
