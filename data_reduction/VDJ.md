@@ -24,21 +24,24 @@ The recommended sequencing depth for V(D)J libraries is ~5,000 reads per cell, 1
 
 # Example data set
 
-The data set we will be using in this workshop is from a [recent study](https://www.cell.com/med/fulltext/S2666-6340(21)00289-0):
+The data set we will be using in this workshop is from a [2021 study](https://www.cell.com/med/fulltext/S2666-6340(21)00289-0) examining partial T-Cell immunity to COVID-19 induced by MMR and Tdap vaccination. In the data reduction section of this workshop, we will be using a single sample for the purposes of demonstration. When we reach the analysis portion of the workshop, this afternoon, we will pair the V(D)J data with the matched gene expression data generated in the experiment, as well.
 
+The graphic below provides an overview of the experimental design:
+
+![Mysore, et al. 2021 experimental design](https://els-jbs-prod-cdn.jbs.elsevierhealth.com/cms/attachment/959b11f3-926d-47b9-914f-610e6b41282e/fx1.jpg)
+
+**Source:**
 Mysore V, Cullere X, Settles ML, Ji X, Kattan MW, Desjardins M, Durbin-Johnson B, Gilboa T, Baden LR, Walt DR, Lichtman AH, Jehi L, Mayadas TN. Protective heterologous T cell immunity in COVID-19 induced by the trivalent MMR and Tdap vaccine antigens. Med (N Y). 2021 Sep 10;2(9):1050-1071.e7.
-
-![Mysore, et al. 2021](https://els-jbs-prod-cdn.jbs.elsevierhealth.com/cms/attachment/959b11f3-926d-47b9-914f-610e6b41282e/fx1.jpg)
 
 # Data reduction
 
-Log into tadpole and navigate to your directory on the /share/workshop space.
+**Log into tadpole and navigate to your directory on the /share/workshop space.**
 
 ```bash
 mkdir -p /share/workshop/vdj_workshop/$USER
 cd /share/workshop/vdj_workshop/$USER
 ```
-Request an interactive session from the scheduler so that we are not competing for resources on the head node.
+**Request an interactive session from the scheduler so that we are not competing for resources on the head node.**
 
 ```bash
 srun -t 1-00:00:00 -c 4 -n 1 --mem 16000 --partition production --account workshop --reservation scrnareq  --pty /bin/bash
@@ -47,6 +50,10 @@ srun -t 1-00:00:00 -c 4 -n 1 --mem 16000 --partition production --account worksh
 ## Project set-up
 
 ### Reads
+
+We will be using a small fastq file that was created by subsetting 1,000,000 reads from the original data.
+
+**Create a symbolic link to the sequence data inside your project directory.**
 
 ```bash
 mkdir -p /share/workshop/vdj_workshop/$USER/00-RawData
@@ -58,12 +65,8 @@ ln -s /share/workshop/vdj_workshop/Data/* .
 Before getting started, we need to make sure that we have the cellranger software in our path. This can be done one of three ways:
 
 1. Module load: `module load cellranger`. This will only work on a cluster with modules for software management.
-2. Add the location of a previously downloaded cellranger build to our path: `export PATH=/share/workshop/scRNA_workshop/software/cellranger-6.1.2/bin:$PATH`. This will not work if you don't have a copy of cellranger somewhere on the system.
-3. Download cellranger in the current directory:
-
-```bash
-wget -O cellranger-6.1.2.tar.gz "https://cf.10xgenomics.com/releases/cell-vdj/cellranger-6.1.2.tar.gz?Expires=1648136746&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jZi4xMHhnZW5vbWljcy5jb20vcmVsZWFzZXMvY2VsbC12ZGovY2VsbHJhbmdlci02LjEuMi50YXIuZ3oiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE2NDgxMzY3NDZ9fX1dfQ__&Signature=UUwuOcpsdoHEq3Pp81Gkm6ih5XVsY32BMcU3HslaQBR7iJ7HEElJ9x5rc2g8MBaA~D~7WeK4e99Msm84pXNoe4BXvx-iaOXwriCfK3kdmi8ikPHRCqG0~FdOhAzzZWZkpUhszySNptvxycsKMcPgXPlVT1EpvA6B4-P6k7wbrTwOBH7AaLXqLNQ5s5W9HBS4cUx1niUB9e0UetyNOmsFommtc9L4VEpFtWh1zi0LSL1Dd-1~5b~pagqxIWp7Nxx7Xd3AOybq-hgZoGsaSQZ8JCrYojitBlYs4mOCxV-f3EhLmrv4jI-ZhEEzVOzrPlBc4xXHwU9X~m5jI80wp2xykA__&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA"
-```
+2. Add the location of a previously downloaded cellranger build to our path: `export PATH=/share/workshop/vdj_workshop/Software/cellranger-7.1.0/bin:$PATH`. This will only work if there is a download of cellranger somewhere in the filesystem for you to point to.
+3. [Download cellranger](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/latest) in the current directory.
 
 ### Reference
 
@@ -96,13 +99,13 @@ You can also generate V(D)J references for IMGT sequences. Additional instructio
 
 #### Downloading prebuilt Cell Ranger reference
 
-Since we are working with human data in this workshop, let's download the prebuilt reference.
+Since we are working with human data in this workshop, we will use a prebuilt reference that was downloaded from the 10x website using code available [here](https://support.10xgenomics.com/single-cell-vdj/software/downloads/latest).
+
+**Create a symbolic link to the downloaded prebuilt reference.**
 
 ```bash
-cd /share/workshop/vdj_workshop/$USER/
-wget https://cf.10xgenomics.com/supp/cell-vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
-tar -xzvf refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
-rm refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
+cd /share/workshop/vdj_workshop/$USER/00-RawData
+ln -s /share/workshop/vdj_workshop/Software/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0 reference
 ```
 
 ## Running cellranger vdj
@@ -111,15 +114,20 @@ For experiments with V(D)J libraries only, 10x recommends running `cellranger vd
 
 ### Input
 
-The call to cellranger vdj is simple:
+The input to cellranger vdj is simple. The user is required to provide the path to a directory containing fastq files, the a sample identifier, and the path to a reference.
+
+**Launch cellranger vdj.**
 
 ```bash
+mkdir -p /share/workshop/vdj_workshop/$USER/01-Cellranger
+cd /share/workshop/vdj_workshop/$USER/01-Cellranger
 cellranger vdj \
     --id=Pool1_VDJ \
-    --fastqs=00-RawData \
+    --fastqs=/share/workshop/vdj_workshop/$USER/00-RawData \
     --sample=Pool1_VDJ \
-    --reference=refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0
+    --reference=/share/workshop/vdj_workshop/$USER/reference
 ```
+In this workshop, because we're working on an interactive session with a single sample, we will run the command directly on the command line. A SLURM script to run an array of cellranger vdj jobs through a scheduler and a bash script to run the cellranger vdj command are provided in the Software directory for your reference.
 
 ### Output
 
