@@ -36,7 +36,7 @@ fastqs=${basepath}/00-RawData
 outdir=${basepath}/01-Cellranger
 
 ## provide the script the row # of the sample to be run
-sample=`sed "$1q;d" ${basepath}/samples.txt`
+sample=`sed "${SLURM_ARRAY_ID}q;d" ${basepath}/samples.txt`
 
 ## https://support.10xgenomics.com/single-cell-gene-expression/software/overview/welcome
 ## Create the call

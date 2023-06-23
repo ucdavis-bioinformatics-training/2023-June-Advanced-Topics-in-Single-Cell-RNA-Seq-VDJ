@@ -20,6 +20,10 @@ if (!any(rownames(installed.packages()) == "ggplot2")){
   BiocManager::install("ggplot2")
 }
 
+if (!any(rownames(installed.packages()) == "viridis")){
+  BiocManager::install("virids")
+}
+
 if (!any(rownames(installed.packages()) == "knitr")){
   BiocManager::install("knitr")
 }
@@ -35,6 +39,7 @@ if (!any(rownames(installed.packages()) == "dplyr")){
 if (!any(rownames(installed.packages()) == "tidyr")){
   BiocManager::install("tidyr")
 }
+
 if (!any(rownames(installed.packages()) == "magrittr")){
   BiocManager::install("magrittr")
 }
@@ -44,6 +49,7 @@ if (!any(rownames(installed.packages()) == "scRepertoire")){
 }
 
 library(ggplot2)
+library(viridis)
 library(tidyr)
 library(magrittr)
 library(knitr)
@@ -101,11 +107,15 @@ head(vdj[[1]]) %>%
 
 ## Number of unique clonotypes
 ```{r}
-quantContig(vdj, cloneCall="aa", group = "sample", scale = FALSE, exportTable = TRUE)
+quantContig(vdj, cloneCall="aa", group = "sample", scale = FALSE, exportTable = TRUE) %>%
+  select(sample, contigs, total) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 ## Distribution of clonotypes by abundance
 ```{r}
-abundanceContig(vdj, cloneCall = "gene", group = "sample", scale = FALSE)
+abundanceContig(vdj, cloneCall = "gene", group = "sample", scale = FALSE) +
+  guides(color = "none")
 abundanceContig(vdj, cloneCall = "gene", group = "sample", scale = FALSE, exportTable = TRUE) %>%
   arrange(desc(Abundance)) %>%
   filter(!is.na(CTgene)) %>%
@@ -117,8 +127,10 @@ abundanceContig(vdj, cloneCall = "gene", group = "sample", scale = FALSE, export
 
 ## Contig length distribution
 ```{r}
-lengthContig(vdj, cloneCall="nt", scale=TRUE, chains = "combined", group="sample")
-lengthContig(vdj, cloneCall="aa", chains = "single", group = "sample")
+lengthContig(vdj, cloneCall="nt", scale=TRUE, chains = "combined", group="sample") +
+  guides(fill = "none")
+lengthContig(vdj, cloneCall="aa", chains = "single", group = "sample") +
+  guides(fill = "none")
 ```
 
 ### Shared clonotypes
@@ -128,13 +140,19 @@ This function does not make much sense with only one sample, and is included jus
 ```{r}
 compareClonotypes(vdj, numbers = 10, cloneCall = "aa", graph = "alluvial") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(caption = "Results of compareClonotypes() with numbers = 10.")
+  scale_fill_viridis_d(option = "turbo") +
+  labs(caption = "Results of compareClonotypes() with numbers = 10.") +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 ```
 
 ### Relative abundance of clones by frequency
 ```{r}
 clonalHomeostasis(vdj, cloneCall = "aa") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  scale_fill_viridis_d(option = "plasma") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.x = element_blank(),
+        legend.title = element_blank())
 ```
 
 ### Relative abundance of clones by index
@@ -142,7 +160,9 @@ clonalHomeostasis(vdj, cloneCall = "aa") +
 Clonal index 1 represents the most frequent clone in a given sample, while index 1000 represents the 1000th most frequent clone.
 ```{r}
 clonalProportion(vdj, cloneCall = "aa", split = c(10, 50, 100, 500, 1000)) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  scale_fill_viridis_d(option = "rocket", direction = -1) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.x = element_blank())
 ```
 
 ### Overlap analysis
@@ -166,12 +186,17 @@ tcr.clusters <- clusterTCR(vdj[[1]], chain = "TCRA", sequence = "aa", threshold 
 
 ## Combine V(D)J and expression data
 
-In the terminal, from your project directory, run `scp username@tadpole.genomecenter.ucdavis.edu:/share/workshop/vdj_workshop/R_objects/seurat_object.rds .`.
+First, we need to download the expression data. The Seurat object located in the vdj_workshop directory on tadpole contains a subset of the data from the study, re-analyzed with different parameters.
+
+```{bash, eval = FALSE}
+scp username@tadpole.genomecenter.ucdavis.edu:/share/workshop/vdj_workshop/R_objects/seurat_object.rds .
+```
+
+
 
 ```{r}
 library(Seurat)
 expression <- readRDS("seurat_object.rds")
-expression$barcode <- sapply(strsplit(colnames(expression), split = "-"), "[[", 1)
 expression <- RenameCells(expression, new.names = expression$barcode)
 vdj <- lapply(vdj, function (x) {
   b = sapply(strsplit(sapply(strsplit(x$barcode, split = "_"), "[[", 3), split = "-"), "[[", 1)
@@ -179,39 +204,70 @@ vdj <- lapply(vdj, function (x) {
   x
   })
 expression <- combineExpression(vdj, expression, cloneCall="gene")
-head(expression@meta.data)
+head(expression@meta.data) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 ### Find markers for "large" clones
 ```{r}
-DimPlot(expression, group.by = "cloneType")
+DimPlot(expression, group.by = "cloneType") +
+  scale_color_viridis_d(option = "plasma", direction = -1, end = 0.8)
 Idents(expression) <- "cloneType"
 large.markers <-FindMarkers(expression, ident.1 = "Large (0.01 < X <= 0.1)")
-head(large.markers)
-Idents(expression) <- "orig.ident"
+head(large.markers) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+Idents(expression) <- "Antigen"
 ```
 
 ### Split V(D)J data into separate samples and re-run scRepertoire functions
 ```{r}
-vdj <- expression2List(expression, group = "orig.ident")
-quantContig(vdj, cloneCall="aa", scale = FALSE)
-abundanceContig(vdj, cloneCall = "gene", scale = FALSE)
+vdj <- expression2List(expression, group = "Antigen")
+
+quantContig(vdj, cloneCall="aa", scale = FALSE) +
+  scale_fill_viridis_d()
+
+abundanceContig(vdj, cloneCall = "gene", scale = FALSE) +
+  scale_color_viridis_d()
+
 compareClonotypes(vdj, numbers = 20, cloneCall = "aa", graph = "alluvial") +
+  scale_fill_viridis_d(option = "turbo") +
   guides(fill = "none") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(caption = "Results of compareClonotypes() with numbers = 20.")
+
 clonalHomeostasis(vdj, cloneCall = "aa") +
+  scale_fill_viridis_d(option = "plasma") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 clonalProportion(vdj, cloneCall = "aa", split = c(10, 50, 100, 500, 1000)) +
+  scale_fill_viridis_d(option = "rocket") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 clonalOverlap(vdj, cloneCall = "gene+nt")
-clonalDiversity(vdj, cloneCall = "aa")
-?clonalOverlay
-clonalOverlay(expression, reduction = "umap", freq.cutpoint = 30, bins = 10, facet = "orig.ident")
-contig <- abundanceContig(vdj, exportTable = TRUE) %>%
+
+clonalDiversity(vdj, cloneCall = "aa") +
+  scale_fill_viridis_d() +
+  theme(legend.title = element_blank())
+
+clonalOverlay(expression,
+              reduction = "umap",
+              freq.cutpoint = 30,
+              bins = 10,
+              facet = "Convalescent") +
+  labs(color = "Antigen") +
+  scale_color_viridis_d()
+```
+```{r, fig.width=10}
+contig <- abundanceContig(vdj, cloneCall = "aa", exportTable = TRUE) %>%
   arrange(desc(Abundance)) %>%
-  slice(5)
-contig$CTstrict
-DimPlot(highlightClonotypes(expression, cloneCall = "gene+nt", sequence = "TRAV25.TRAJ37.TRAC_TGTGCAGGTCCCCGGGGCTCTGGCAACACAGGCAAACTAATCTTT_TRBV6-5.TRBJ1-1.None.TRBC1_TGTGCCAGCAGAAAACAGGGGGCCACTGAAGCTTTCTTT"), group.by = "highlight")
+  filter(!is.na(CTaa)) %>%
+  slice(1:5)
+Idents(expression) <- expression$CTaa
+DimPlot(expression,
+        reduction = "umap",
+        cells.highlight = CellsByIdentities(expression, idents = contig$CTaa),
+        cols.highlight = turbo(length(contig$CTaa)))
 ```
 
 ## Circos plots
@@ -220,7 +276,7 @@ This code is under construction! If we have time, I will attempt to update this 
 
 ```{r, eval=FALSE}
 ?getCirclize
-circles <- getCirclize(vdj, groupBy = "orig.ident" )
+circles <- getCirclize(vdj, groupBy = "orig.ident")
 
 #Just assigning the normal colors to each cluster
 grid.cols <- hue_pal()(length(unique(seurat$orig.ident)))
