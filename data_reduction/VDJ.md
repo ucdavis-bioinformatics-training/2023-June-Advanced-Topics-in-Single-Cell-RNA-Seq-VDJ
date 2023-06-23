@@ -104,7 +104,7 @@ Since we are working with human data in this workshop, we will use a prebuilt re
 **Create a symbolic link to the downloaded prebuilt reference.**
 
 ```bash
-cd /share/workshop/vdj_workshop/$USER/00-RawData
+cd /share/workshop/vdj_workshop/$USER
 ln -s /share/workshop/vdj_workshop/Software/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0 reference
 ```
 
