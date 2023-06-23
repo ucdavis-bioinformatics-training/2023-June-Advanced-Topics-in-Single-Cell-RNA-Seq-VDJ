@@ -157,3 +157,7 @@ When you have the config file, you can launch cellranger multi:
 ```
 cellranger multi --id=Pool1_VDJ --csv=Pool1_multi.csv
 ```
+
+## Prepare for Analysis
+
+Finally, please [download the Rmarkdown document](https://github.com/ucdavis-bioinformatics-training/2023-June-Advanced-Topics-in-Single-Cell-RNA-Seq-VDJ/blob/main/data_analysis/VDJ_Analysis.Rmd) that contains the code we'll be using as the basis of our analysis this afternoon.
