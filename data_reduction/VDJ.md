@@ -44,7 +44,7 @@ cd /share/workshop/vdj_workshop/$USER
 **Request an interactive session from the scheduler so that we are not competing for resources on the head node.**
 
 ```bash
-srun -t 1-00:00:00 -c 4 -n 1 --mem 16000 --partition production --account workshop --reservation scrnareq  --pty /bin/bash
+srun -t 1-00:00:00 -c 4 -n 1 --mem 16000 --partition production --account workshop --reservation rnaworkshop  --pty /bin/bash
 ```
 
 ## Project set-up
