@@ -6,12 +6,12 @@ output:
       keep_md: TRUE
 ---
 
-Last Updated March 23, 2022
+Last Updated June 22, 2023
 
 # Single Cell V(D)J Analysis
 
 ## Packages
-```{r, libraries, warning=FALSE,error=FALSE,message=FALSE}
+```{r, warning=FALSE,error=FALSE,message=FALSE}
 if (!requireNamespace("BiocManager", quietly = TRUE)){
     install.packages("BiocManager")
 }
@@ -93,18 +93,26 @@ vdj <- combineTCR(lapply(clonotypes, read.csv),
                   cells = "T-AB",
                   removeMulti = TRUE)
 class(vdj)
-str(vdj)
 class(vdj[[1]])
-head(vdj[[1]])
+head(vdj[[1]]) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 
 ## Number of unique clonotypes
 ```{r}
-quantContig(vdj, cloneCall="aa", group = "sample", scale = FALSE)
+quantContig(vdj, cloneCall="aa", group = "sample", scale = FALSE, exportTable = TRUE)
 ```
 ## Distribution of clonotypes by abundance
 ```{r}
 abundanceContig(vdj, cloneCall = "gene", group = "sample", scale = FALSE)
+abundanceContig(vdj, cloneCall = "gene", group = "sample", scale = FALSE, exportTable = TRUE) %>%
+  arrange(desc(Abundance)) %>%
+  filter(!is.na(CTgene)) %>%
+  select(CTgene, Abundance) %>%
+  slice(1:20) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"), fixed_thead = TRUE)
 ```
 
 ## Contig length distribution
@@ -115,7 +123,7 @@ lengthContig(vdj, cloneCall="aa", chains = "single", group = "sample")
 
 ### Shared clonotypes
 
-This function does not make much sense with only one sample, and is included just for the purposes of demonstration.
+This function does not make much sense with only one sample, and is included just for the purposes of demonstration. We'll come back to it later after using the gene expression data to separate our V(D)J pool into separate samples.
 
 ```{r}
 compareClonotypes(vdj, numbers = 10, cloneCall = "aa", graph = "alluvial") +
@@ -139,7 +147,7 @@ clonalProportion(vdj, cloneCall = "aa", split = c(10, 50, 100, 500, 1000)) +
 
 ### Overlap analysis
 
-Clonal overlap is scaled to the number of unique clonotypes in the smaller sample. This code errors on fewer than two samples.
+Clonal overlap is scaled to the number of unique clonotypes in the smaller sample. This code errors on fewer than two samples. Again, we will revisit this function after splitting our V(D)J data into multiple samles using the gene expression data.
 ```{r, eval=FALSE}
 clonalOverlap(vdj, cloneCall = "gene+nt")
 ```
