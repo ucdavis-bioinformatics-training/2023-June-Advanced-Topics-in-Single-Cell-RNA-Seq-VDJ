@@ -68,6 +68,12 @@ Before getting started, we need to make sure that we have the cellranger softwar
 2. Add the location of a previously downloaded cellranger build to our path: `export PATH=/share/workshop/vdj_workshop/Software/cellranger-7.1.0/bin:$PATH`. This will only work if there is a download of cellranger somewhere in the filesystem for you to point to.
 3. [Download cellranger](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/latest) in the current directory.
 
+**Add cellranger to the path.**
+
+```bash
+export PATH=/share/workshop/vdj_workshop/Software/cellranger-7.1.0/bin:$PATH
+```
+
 ### Reference
 
 There are prebuilt human and mouse reference packages for use with Cell Ranger V(D)J, which we will be using in this workshop. For other species, or to create a custom reference, we would run [cellranger mkvdjref](https://support.10xgenomics.com/single-cell-vdj/software/pipelines/latest/advanced/references).
