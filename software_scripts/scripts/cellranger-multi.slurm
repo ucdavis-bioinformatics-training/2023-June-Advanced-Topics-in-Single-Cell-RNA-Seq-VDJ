@@ -36,22 +36,20 @@ export PATH=/share/workshop/vdj_workshop/Software/cellranger-7.1.0/bin:$PATH
 
 ## Set the parameters for the run
 basedir="/share/workshop/vdj_workshop/$USER"
-reference="/share/workshop/vdj_workshop/Software/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0"
+reference=/share/workshop/vdj_workshop/Software/refdata-gex-GRCh38-2020-A
 fastqs="${basedir}/00-RawData"
 outdir="${basedir}/01-Cellranger"
+configs="${fastqs}/multiconfig"
 
 ## provide the script the row # of the sample to be run
 ## NOTE: this script expects a file called samples.txt with one sample name per line in the basedir
+## NOTE: this script expects a config file for each sample located in fastqs/multiconfig
 sample=`sed "${SLURM_ARRAY_TASK_ID}q;d" ${basedir}/samples.txt`
 
 ## Create the call
-call="cellranger vdj \
+call="cellranger multi \
   --id=${sample} \
-  --sample=${sample} \
-  --fastqs=${fastqs} \
-  --reference=${reference} \
-  --localcores=${THREADS} \
-  --localmem=${MEM}"
+  --csv=${configs}/${sample}_multi.csv"
 
 ## Create output directory and change directory
 mkdir -p $outdir
