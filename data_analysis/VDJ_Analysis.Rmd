@@ -6,12 +6,16 @@ output:
       keep_md: TRUE
 ---
 
-Last Updated June 22, 2023
+Last Updated June 27, 2023
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
 
 # Single Cell V(D)J Analysis
 
-## Packages
-```{r, warning=FALSE,error=FALSE,message=FALSE}
+## Libraries
+```{r}
 if (!requireNamespace("BiocManager", quietly = TRUE)){
     install.packages("BiocManager")
 }
@@ -68,7 +72,7 @@ set.seed(1234) # arbitrary
 
 ## Download Cell Ranger results
 
-The following code downloads the output from a cellranger vdj run that has been stored in the github repository. The system call does not work on all operating systems.
+The following code downloads the output from a cellranger vdj run that has been stored in the github repository. The system call does not work on all operating systems. If the system call fails, you may need to unzip the file manually.
 
 ```{r, eval=FALSE}
 options(timeout=1200)
@@ -76,22 +80,27 @@ download.file("https://raw.githubusercontent.com/ucdavis-bioinformatics-training
 system("unzip cellranger_vdj_results.zip")
 ```
 
-## Set-up
+We will also be using the gene expression data from this experiment, which is contained in a Seurat object. Download the Seurat object from the computing cluster. Don't forget to replace "username" with your username.
+
+```{bash, eval = FALSE}
+scp username@tadpole.genomecenter.ucdavis.edu:/share/workshop/vdj_workshop/R_objects/seurat_object.rds .
+```
+
+## Set up
 ```{r}
-experiment_name = "VDJ Example"
-dataset_loc <- "./cellranger_vdj_results"
-ids <- c("Pool1")
+vdj.location <- "./cellranger_vdj_results"
+vdj.ids <- c("Pool1")
 ```
 
 ## Sequencing metrics
 ```{r}
-metrics <- paste(dataset_loc, ids, "metrics_summary.csv", sep = "/")
-metrics_table <- do.call("cbind", lapply(metrics, function(x) {
+metrics <- paste(vdj.location, vdj.ids, "metrics_summary.csv", sep = "/")
+metrics.table <- do.call("cbind", lapply(metrics, function(x) {
   as.data.frame(t(read.csv(x)))
   }))
-colnames(metrics_table) <- ids
-rownames(metrics_table) <- gsub(".", " ", rownames(metrics_table), fixed = TRUE)
-metrics_table  %>%
+colnames(metrics.table) <- vdj.ids
+rownames(metrics.table) <- gsub(".", " ", rownames(metrics.table), fixed = TRUE)
+metrics.table  %>%
   kable(caption = 'Cell Ranger Results') %>%
   pack_rows("Overview", 1, 3, label_row_css = "background-color: #666; color: #fff;") %>%
   pack_rows("Sequencing Characteristics", 4, 8, label_row_css = "background-color: #666; color: #fff;") %>%
@@ -102,13 +111,28 @@ metrics_table  %>%
 The majority of the following functions and figures come from [scRepertoire](https://ncborcherding.github.io/vignettes/vignette.html). We will be exploring and making changes to the code as we go, so please take notes and don't be afraid to experiment and ask questions!
 
 ## Read in Cell Ranger VDJ Data
+
 ```{r}
-clonotypes <- paste(dataset_loc, ids, "filtered_contig_annotations.csv", sep = "/")
-vdj <- combineTCR(lapply(clonotypes, read.csv),
-                  samples = ids,
-                  ID = ids,
+contig.list <- lapply(paste(vdj.location, vdj.ids, "filtered_contig_annotations.csv", sep = "/"), read.csv)
+# read in Seurat object and add a shortened sample identifier
+expression <- readRDS("seurat_object.rds")
+expression$Sample_Name_short <- gsub("batch1.", "", expression$Sample_Name)
+```
+
+For multiplexed data from a single contig annotations CSV:
+
+```{r}
+contigs <- contig.list[[1]]
+contigs$barcode <- paste(sapply(strsplit(contigs$barcode, split = "-"), "[[", 1), vdj.ids, sep = "-")
+contig.list <- createHTOContigList(contigs,
+                           expression,
+                           group.by = "Sample_Name_short")
+vdj <- combineTCR(contig.list,
+                  samples = names(contig.list),
+                  ID = names(contig.list),
                   cells = "T-AB",
-                  removeMulti = TRUE)
+                  removeMulti = TRUE,
+                  removeNA = TRUE)
 # rename barcodes to match the format oligo-sample
 vdj <- lapply(vdj, stripBarcode)
 vdj <- lapply(vdj, function(df){
@@ -117,65 +141,65 @@ vdj <- lapply(vdj, function(df){
 })
 # structure of the vdj object
 class(vdj)
+length(vdj)
+names(vdj)
 class(vdj[[1]])
-head(vdj[[1]]) %>%
+vdj[[1]] %>%
+  slice(1:5) %>%
   kable() %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 
-## Number of unique clonotypes
+For non-multiplexed experiments:
+
+```{r, eval=FALSE}
+vdj <- combineTCR(contig.list,
+                  samples = vdj.ids,
+                  ID = vdj.ids,
+                  cells = "T-AB",
+                  removeMulti = TRUE,
+                  removeNA = TRUE)
+# rename barcodes to match the format oligo-sample
+vdj <- lapply(vdj, stripBarcode)
+vdj <- lapply(vdj, function(df){
+  df$barcode = paste(sapply(strsplit(df$barcode, split = "-"), "[[", 1), df$sample, sep = "-")
+  df
+})
+# structure of the vdj object
+class(vdj)
+length(vdj)
+names(vdj)
+class(vdj[[1]])
+vdj[[1]] %>%
+  slice(1:5) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+```
+
+## Basic repertoire analysis
+
+### Number of unique clonotypes
 ```{r}
 quantContig(vdj, cloneCall="aa", group = "sample", scale = FALSE, exportTable = TRUE) %>%
   select(sample, contigs, total) %>%
   kable() %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+quantContig(vdj, cloneCall="aa", group = "sample", scale = FALSE) +
+  scale_fill_viridis_d()
 ```
 
-## Distribution of clonotypes by abundance
+### Distribution of clonotypes by abundance
 ```{r}
 abundanceContig(vdj, cloneCall = "gene", group = "sample", scale = FALSE) +
-  guides(color = "none")
+  scale_color_viridis_d()
 abundanceContig(vdj, cloneCall = "gene", group = "sample", scale = FALSE, exportTable = TRUE) %>%
+  group_by(sample) %>%
   arrange(desc(Abundance)) %>%
   filter(!is.na(CTgene)) %>%
-  select(CTgene, Abundance) %>%
-  slice(1:20) %>%
-  kable() %>%
+  select(CTgene, sample, Abundance) %>%
+  slice(1:5) %>%
+  kable(caption = "Most abundant clonotype (gene calls) by sample") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive"), fixed_thead = TRUE)
-```
-
-## Contig length distribution
-```{r}
-lengthContig(vdj, cloneCall="nt", scale=TRUE, chain = "both", group="sample") +
-  guides(fill = "none")
-
-vdj[[1]] %>%
-  mutate(TRA = nchar(cdr3_aa1),
-         TRB = nchar(cdr3_aa2)) %>%
-  pivot_longer(cols = c(TRA, TRB),
-               names_to = "chain",
-               values_to = "chain_aa_length") %>%
-  ggplot(aes(x = chain_aa_length)) +
-  geom_histogram(binwidth = 1) +
-  facet_wrap(~chain, ncol = 1) +
-  theme_classic()
-
-vdj[[1]] %>%
-  mutate(TRA = nchar(cdr3_aa1),
-         TRB = nchar(cdr3_aa2)) %>%
-  pivot_longer(cols = c(TRA, TRB),
-               names_to = "chain",
-               values_to = "chain_aa_length") %>%
-  ggplot(aes(x = chain_aa_length)) +
-  geom_freqpoly(binwidth = 1) +
-  facet_wrap(~chain, ncol = 1) +
-  theme_classic()
-```
-
-### Gene usage
-
-```{r}
-
 ```
 
 ### Relative abundance of clones by frequency
@@ -198,50 +222,140 @@ clonalProportion(vdj, cloneCall = "aa", split = c(10, 50, 100, 500, 1000)) +
         legend.title = element_blank())
 ```
 
-## TCR clustering
-
-TCR clustering groups clonotypes together on sequence similarity (either nucleotide or amino acid, controlled by the "sequence" argument). This may be useful in order to identify cells that are producing receptors that may have similar properties, even though the clone differs.
-
-A new column called "TRA_cluster" (or "TRB_cluster" depending on the chain used), is added to the output by the clustering function. Cluster names containing "LD" represent multi-clonal groups created by the function.
-
-```{r, eval=FALSE}
-tcr.clusters <- clusterTCR(vdj[[1]], chain = "TRA", sequence = "aa", threshold = 0.9)
-# three most abundant aa sequences in three clusters
-tcr.clusters[[1]] %>%
-  count(cdr3_aa1, TRA_cluster) %>%
-  filter(TRA_cluster %in% c("TRA:LD.31", "TRA:LD.23", "TRA:LD.55")) %>%
-  group_by(TRA_cluster) %>%
-  arrange(desc(n)) %>%
-  slice(1:3)
-# 5 largest clusters
-tcr.clusters[[1]] %>%
-  count(TRA_cluster) %>%
-  filter(!is.na(TRA_cluster)) %>%
-  arrange(desc(n)) %>%
-  slice(1:5)
-```
-
-## Combine V(D)J and expression data
-
-First, we need to download the expression data. The Seurat object located in the vdj_workshop directory on tadpole contains a subset of the data from the study, re-analyzed with different parameters.
-
-```{bash, eval = FALSE}
-scp hslyman@tadpole.genomecenter.ucdavis.edu:/share/workshop/vdj_workshop/R_objects/seurat_object.rds .
-```
-
-The the cell barcodes in the "barcode" column of the vdj object must match the barcodes in the expression object in order for the call to combineExpression to work. We handled this when we created the vdj object (using the stripBarcode function and a little bit of custom code), but will verify quickly that there are shared cell names. The "cloneTypes" argument allows the user to set the frequency values associated with each named frequency class.
+### Contig length distribution
 
 ```{r}
-expression <- readRDS("seurat_object.rds")
-# 3654 cell names in Seurat match cell names in scRepertoire
-length(which(sapply(vdj, function(sample){ sample$barcode }) %in% Cells(expression)))
+lengthContig(vdj, cloneCall="nt", scale=TRUE, chain = "both", group="sample") +
+  scale_fill_viridis_d() +
+  facet_wrap(~sample)
+# re-create plot from previous version of scRepertoire
+do.call("rbind", vdj) %>%
+  mutate(TRA = nchar(cdr3_aa1),
+         TRB = nchar(cdr3_aa2)) %>%
+  pivot_longer(cols = c(TRA, TRB),
+               names_to = "chain",
+               values_to = "chain_aa_length") %>%
+  ggplot(aes(x = chain_aa_length, fill = sample)) +
+  geom_histogram(binwidth = 1) +
+  scale_fill_viridis_d() +
+  facet_grid(sample~chain) +
+  theme_classic()
+```
+
+### Gene usage
+
+The scRepertoire function vizGenes will plot the frequency distribution for one gene at a time.
+
+```{r}
+vizGenes(vdj,
+         gene = "V",
+         chain = "TRA",
+         plot = "bar",
+         scale = TRUE)
+vizGenes(vdj,
+         gene = "J",
+         chain = "TRA",
+         plot = "bar",
+         scale = TRUE)
+```
+
+To visualize pairings between genes, we need to write some custom code.
+
+```{r, fig.height=10, fig.width=10}
+lapply(vdj, function(sample){
+  tmp = sample %>%
+    filter(!is.na(CTgene)) %>%
+    separate(CTgene, into = c("CTgene1", "CTgene2"), sep = "_") %>%
+    separate(CTgene1, into = c("v1", "j1", "c1"), sep = "\\.") %>%
+    count(v1, j1) %>%
+    filter(!is.na(v1) & !is.na(j1) & n > 2)
+  grid.cols = turbo(length(unique(tmp$v1)))
+  names(grid.cols) = unique(tmp$v1)
+  chordDiagram(tmp,
+               grid.col = grid.cols,
+               annotationTrack = "grid",
+               preAllocateTracks = list(track.height = max(strwidth(unlist(dimnames(tmp))))))
+  circos.track(track.index = 1,
+               panel.fun = function(x, y){
+                 circos.text(CELL_META$xcenter,
+                             CELL_META$ylim[1],
+                             CELL_META$sector.index,
+                             facing = "clockwise",
+                             niceFacing = TRUE,
+                             adj = c(0, 0.5))
+               },
+               bg.border = NA)
+  circos.clear()
+})
+```
+
+### Compare abundance of clonotypes across samples
+
+```{r}
+compareClonotypes(vdj, numbers = 5, cloneCall = "aa", graph = "alluvial") +
+  scale_fill_viridis_d(option = "turbo") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(caption = "Results of compareClonotypes() with numbers = 5.")
+# list shared clones
+compare.clones <- compareClonotypes(vdj,
+                                    numbers = 100,
+                                    cloneCall = "aa",
+                                    exportTable = TRUE) %>%
+  pivot_wider(names_from = Sample,
+              values_from = Proportion,
+              names_repair = "universal")
+compare.clones$shared.by <- apply(compare.clones, 1, function(x){
+  length(which(!sapply(x[2:5], is.na)))
+})
+# display 10 clones
+compare.clones %>%
+  filter(shared.by > 1) %>%
+  arrange(desc(shared.by)) %>%
+  select(-shared.by) %>%
+  slice(1:10) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+```
+
+### Calculate clonal overlap between samples
+
+```{r}
+clonalOverlap(vdj, cloneCall = "aa", method = "overlap") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Calculate clonal diversity
+
+```{r}
+clonalDiversity(vdj, cloneCall = "aa") +
+  scale_color_viridis_d() +
+  theme(legend.title = element_blank())
+```
+
+## Combined V(D)J and gene expression data
+
+We can get more from the dataset by combining the gene expression data with the clonotype information.
+
+### Add scRepertoire data to the Seurat object
+
+For the multiplexed data, reformat the barcodes.
+```{r}
+vdj <- lapply(vdj, function(x){
+  x$barcode <- paste(sapply(strsplit(x$barcode, split = "-"), "[[", 1), vdj.ids, sep = "-")
+  x
+})
+```
+
+```{r}
 # add scRepertoire info to expression object
 expression <- combineExpression(vdj, expression, cloneCall = "gene", chain = "both")
 head(expression@meta.data) %>%
   kable() %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
-## Find markers for "large" clones
+
+
+### Find markers for large clones
 ```{r}
 DimPlot(expression, group.by = "cloneType") +
   scale_color_viridis_d(option = "plasma", direction = -1, end = 0.8)
@@ -269,88 +383,6 @@ kable(view.markers) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 
-## Split V(D)J data into separate samples and re-run scRepertoire functions
-
-Using the information contained in the Seurat object, we can now split our pooled VDJ data into multiple groups. 
-
-```{r}
-colnames(expression@meta.data)
-```
-
-Let's create a new vdj object from the Seurat object, grouping by sample.
-
-```{r}
-expression$Sample_Name_short <- gsub("batch1.", "", expression$Sample_Name)
-vdj.sample <- expression2List(expression, split.by = "Sample_Name_short")
-class(vdj.sample)
-names(vdj.sample)
-```
-
-Then, all the same functions we ran above can be rerun.
-
-```{r}
-quantContig(vdj.sample, cloneCall = "aa", scale = FALSE) +
-  scale_fill_viridis_d()
-abundanceContig(vdj.sample, cloneCall = "gene", scale = FALSE) +
-  scale_color_viridis_d()
-clonalHomeostasis(vdj.sample, cloneCall = "aa") +
-  scale_fill_viridis_d(option = "plasma") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.title.x = element_blank(),
-        legend.title = element_blank())
-clonalProportion(vdj.sample, cloneCall = "aa", split = c(10, 50, 100, 500, 1000)) +
-  scale_fill_viridis_d(option = "rocket", direction = -1) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.title.x = element_blank(),
-        legend.title = element_blank())
-```
-
-Some functions that we skipped over before because they are not very informative on a single sample are now worth running.
-
-## Compare abundance of clonotypes across samples
-
-```{r}
-compareClonotypes(vdj.sample, numbers = 5, cloneCall = "aa", graph = "alluvial") +
-  scale_fill_viridis_d(option = "turbo") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(caption = "Results of compareClonotypes() with numbers = 5.")
-# list shared clones
-compare.clones <- compareClonotypes(vdj.sample,
-                                    numbers = 10000,
-                                    cloneCall = "aa",
-                                    exportTable = TRUE) %>%
-  pivot_wider(names_from = Sample,
-              values_from = Proportion,
-              names_repair = "universal")
-compare.clones$shared.by <- apply(compare.clones, 1, function(x){
-  length(which(!sapply(x[2:5], is.na)))
-})
-# display 10 clones
-compare.clones %>%
-  filter(shared.by > 1) %>%
-  arrange(desc(shared.by)) %>%
-  select(-shared.by) %>%
-  slice(1:10) %>%
-  kable() %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
-```
-
-### Calculate clonal overlap between samples
-
-```{r}
-clonalOverlap(vdj.sample, cloneCall = "aa", method = "overlap") +
-  scale_fill_viridis(option = "mako") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-### Calculate clonal diversity
-
-```{r}
-clonalDiversity(vdj.sample, cloneCall = "aa") +
-  scale_fill_viridis_d() +
-  theme(legend.title = element_blank())
-```
-
 ### clonalOverlay
 
 In our data set, I wasn't able to find a set of parameters to get the contour to plot using the clonalOverlay function as shown in the documentation [here](https://www.bioconductor.org/packages/release/bioc/vignettes/scRepertoire/inst/doc/vignette.html#62_clonalOverlay). If you figure out how to make it work, please let me know!
@@ -367,12 +399,11 @@ clonalOverlay(expression,
 ```
 
 
-## Visualize selected contig sequences on UMAP
+### Visualize selected contig sequences on UMAP
 
 ```{r, fig.width=10}
 contig <- abundanceContig(vdj, cloneCall = "aa", exportTable = TRUE) %>%
   arrange(desc(Abundance)) %>%
-  filter(!is.na(CTaa)) %>%
   slice(1:5)
 Idents(expression) <- expression$CTaa
 DimPlot(expression,
@@ -381,21 +412,30 @@ DimPlot(expression,
         cols.highlight = turbo(length(contig$CTaa)))
 ```
 
-## Display V-J combinations on Circos plot
+## TCR clustering
+
+TCR clustering groups clonotypes together on sequence similarity (either nucleotide or amino acid, controlled by the "sequence" argument). This may be useful in order to identify cells that are producing receptors that may have similar properties, even though the clone differs.
+
+A new column called "TRA_cluster" (or "TRB_cluster" depending on the chain used), is added to the output by the clustering function. Cluster names containing "LD" represent multi-clonal groups created by the function.
 
 ```{r}
-norm.COVID.circlize <- expression@meta.data %>%
-  filter(Sample_Name_short == "norm.COVID" & !is.na(CTgene)) %>%
-  separate(CTgene, into = c("CTgene1", "CTgene2"), sep = "_") %>%
-  separate(CTgene1, into = c("v1", "j1", "c1"), sep = "\\.") %>%
-  count(v1, j1) %>%
-  filter(!is.na(v1) & !is.na(j1) & n > 5) %>%
-  arrange(desc(n))
-
-grid.cols <- turbo(length(unique(norm.COVID.circlize$v1)))
-names(grid.cols) <- unique(norm.COVID.circlize$v1)
-chordDiagram(norm.COVID.circlize, grid.col = grid.cols)
-circos.clear()
+tcr.clusters <- clusterTCR(vdj, chain = "TRA", sequence = "aa", threshold = 0.9)
+# three most abundant aa sequence in three clusters
+do.call("rbind", tcr.clusters) %>%
+  count(cdr3_aa1, TRA_cluster) %>%
+  filter(TRA_cluster %in% c("TRA:LD.31", "TRA:LD.23", "TRA:LD.55")) %>%
+  group_by(TRA_cluster) %>%
+  arrange(desc(n)) %>%
+  slice(1:3) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+# all aa sequences in cluster TRA:LD.55
+do.call("rbind", tcr.clusters) %>%
+  filter(TRA_cluster == "TRA:LD.55") %>%
+  count(cdr3_aa1) %>%
+  arrange(desc(n)) %>%
+  kable %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
 
 ## Session Information
